@@ -3,7 +3,7 @@ require 'supply'
 
 module Fastlane
   module Actions
-    class CreateAppOnManagedPlayStoreAction < Action
+    class CreateAppOnManagedPlayStoreAabAction < Action
       def self.run(params)
         client = PlaycustomappClient.make_from_config(params: params)
 
@@ -17,7 +17,7 @@ module Fastlane
           app_title: params[:app_title],
           language_code: params[:language],
           developer_account: params[:developer_account_id],
-          apk_path: params[:apk]
+          aab_path: params[:aab]
         )
       end
 
@@ -26,7 +26,7 @@ module Fastlane
       end
 
       def self.authors
-        ["janpio"]
+        ["panella"]
       end
 
       def self.return_value
@@ -44,7 +44,7 @@ module Fastlane
             developer_account_id: 'developer_account_id', # obtained using the `get_managed_play_store_publishing_rights` action (or looking at the Play Console url)
             app_title: 'Your app title',
             language: 'en_US', # primary app language in BCP 47 format
-            apk: '/files/app-release.apk'
+            aab: '/files/app-release.aab'
           )"
         ]
       end
@@ -88,18 +88,18 @@ module Fastlane
                                        code_gen_sensitive: true,
                                        default_value: CredentialsManager::AppfileConfig.try_fetch_value(:developer_account_id),
                                        default_value_dynamic: true),
-          # APK
-          FastlaneCore::ConfigItem.new(key: :apk,
-                                       env_name: "SUPPLY_APK",
-                                       description: "Path to the APK file to upload",
+          # aab
+          FastlaneCore::ConfigItem.new(key: :aab,
+                                       env_name: "SUPPLY_AAB",
+                                       description: "Path to the aab file to upload",
                                        short_option: "-b",
                                        code_gen_sensitive: true,
-                                       default_value: Dir["*.apk"].last || Dir[File.join("app", "build", "outputs", "apk", "app-release.apk")].last,
+                                       default_value: Dir["*.aab"].last || Dir[File.join("app", "build", "outputs", "bundle", "app-release.aab")].last,
                                        default_value_dynamic: true,
                                        verify_block: proc do |value|
-                                         UI.user_error!("No value found for 'apk'") if value.to_s.length == 0
-                                         UI.user_error!("Could not find apk file at path '#{value}'") unless File.exist?(value)
-                                         UI.user_error!("apk file is not an apk") unless value.end_with?('.apk')
+                                         UI.user_error!("No value found for 'aab'") if value.to_s.length == 0
+                                         UI.user_error!("Could not find aab file at path '#{value}'") unless File.exist?(value)
+                                         UI.user_error!("aab file is not an aab") unless value.end_with?('.aab')
                                        end),
           # Title
           FastlaneCore::ConfigItem.new(key: :app_title,
@@ -154,14 +154,14 @@ class PlaycustomappClient < Supply::AbstractGoogleServiceClient
   # @!group Create
   #####################################################
 
-  def create_app(app_title: nil, language_code: nil, developer_account: nil, apk_path: nil)
+  def create_app(app_title: nil, language_code: nil, developer_account: nil, aab_path: nil)
     custom_app = Google::Apis::PlaycustomappV1::CustomApp.new(title: app_title, language_code: language_code)
 
     call_google_api do
       client.create_account_custom_app(
         developer_account,
         custom_app,
-        upload_source: apk_path
+        upload_source: aab_path
       )
     end
   end
